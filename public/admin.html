@@ -27,19 +27,10 @@
       <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-xl">Sair</button>
     </div>
 
-    <!-- FILTRO -->
-    <div class="bg-white p-4 rounded-xl shadow mb-4 flex gap-3 flex-wrap">
-      <input type="date" id="start" class="border p-2 rounded">
-      <input type="date" id="end" class="border p-2 rounded">
-      <button onclick="loadPayments()" class="bg-blue-600 text-white px-4 rounded">Filtrar</button>
-    </div>
-
-    <!-- TOTAL -->
     <div class="bg-green-100 p-4 rounded-xl mb-4">
       <strong>Total:</strong> <span id="total">R$ 0,00</span>
     </div>
 
-    <!-- TABELA -->
     <div class="bg-white rounded-2xl shadow p-4 overflow-x-auto">
       <table class="w-full text-left">
         <thead>
@@ -61,6 +52,7 @@
 <script>
 const ADMIN_USER = "admin"
 const ADMIN_PASS = "123456"
+const ADMIN_TOKEN = "admin123"
 
 function login() {
   const u = document.getElementById('user').value
@@ -86,18 +78,13 @@ function init() {
 }
 
 async function loadPayments() {
-  const start = document.getElementById('start').value
-  const end = document.getElementById('end').value
+  const res = await fetch('/payments', {
+    headers: {
+      'Authorization': ADMIN_TOKEN
+    }
+  })
 
-  const res = await fetch('/payments')
-  let data = await res.json()
-
-  if (start && end) {
-    data = data.filter(p => {
-      const d = new Date(p.created_at)
-      return d >= new Date(start) && d <= new Date(end)
-    })
-  }
+  const data = await res.json()
 
   const tbody = document.getElementById('table-body')
   tbody.innerHTML = ''
@@ -124,7 +111,6 @@ async function loadPayments() {
     "R$ " + (total / 100).toFixed(2)
 }
 
-// auto login
 if (localStorage.getItem('admin')) init()
 </script>
 
