@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout Stripe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Checkout inicial</h1>
+    <p class="text-gray-500 mb-6">Primeiro pagamento com Stripe</p>
+
+    <form id="checkout-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Produto</label>
+        <input
+          id="productName"
+          type="text"
+          value="Plano Inicial"
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Valor em centavos</label>
+        <input
+          id="amountInCents"
+          type="number"
+          value="1990"
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+        <p class="text-xs text-gray-400 mt-1">Ex.: 1990 = R$ 19,90</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">E-mail do cliente</label>
+        <input
+          id="customerEmail"
+          type="email"
+          placeholder="cliente@email.com"
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <button
+        id="payBtn"
+        type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
+      >
+        Ir para pagamento
+      </button>
+
+      <p id="msg" class="text-sm text-red-600"></p>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('checkout-form')
+    const payBtn = document.getElementById('payBtn')
+    const msg = document.getElementById('msg')
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      msg.textContent = ''
+      payBtn.disabled = true
+      payBtn.textContent = 'Criando checkout...'
+
+      try {
+        const productName = document.getElementById('productName').value.trim()
+        const amountInCents = parseInt(document.getElementById('amountInCents').value, 10)
+        const customerEmail = document.getElementById('customerEmail').value.trim()
+
+        const response = await fetch('/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            productName,
+            amountInCents,
+            customerEmail
+          })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao criar checkout.')
+        }
+
+        if (!data.url) {
+          throw new Error('A Stripe não retornou a URL do checkout.')
+        }
+
+        window.location.href = data.url
+      } catch (error) {
+        msg.textContent = error.message || 'Erro inesperado.'
+        payBtn.disabled = false
+        payBtn.textContent = 'Ir para pagamento'
+      }
+    })
+  </script>
+</body>
+</html>
