@@ -9,7 +9,6 @@ dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3000
-const BASE_URL = process.env.BASE_URL
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
@@ -57,10 +56,19 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
 
-// 🔥 LISTAR PAGAMENTOS
+// 🔐 PROTEÇÃO SIMPLES ADMIN
+const ADMIN_TOKEN = "admin123"
+
+// 🔥 LISTAR PAGAMENTOS (PROTEGIDO + ORDENADO)
 app.get('/payments', async (req, res) => {
   try {
-    const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/payments?select=*`, {
+    const token = req.headers['authorization']
+
+    if (token !== ADMIN_TOKEN) {
+      return res.status(401).json({ error: 'Não autorizado' })
+    }
+
+    const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/payments?select=*&order=created_at.desc`, {
       headers: {
         'apikey': process.env.SUPABASE_SERVICE_ROLE,
         'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`
