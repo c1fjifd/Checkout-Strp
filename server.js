@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename)
 
 app.use(cors())
 
-// 🔥 WEBHOOK (NÃO MEXE)
+// 🔥 WEBHOOK
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const sig = req.headers['stripe-signature']
@@ -30,8 +30,6 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object
-
-      console.log('💰 PAGAMENTO CONFIRMADO')
 
       await fetch(`${process.env.SUPABASE_URL}/rest/v1/payments`, {
         method: 'POST',
@@ -48,13 +46,10 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
           status: paymentIntent.status
         })
       })
-
-      console.log('✅ SALVO NO SUPABASE')
     }
 
     res.json({ received: true })
   } catch (err) {
-    console.error('Erro webhook:', err.message)
     res.status(400).send(`Webhook Error: ${err.message}`)
   }
 })
@@ -62,7 +57,24 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
 
-// 🔥 NOVO PAYMENT INTENT
+// 🔥 LISTAR PAGAMENTOS
+app.get('/payments', async (req, res) => {
+  try {
+    const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/payments?select=*`, {
+      headers: {
+        'apikey': process.env.SUPABASE_SERVICE_ROLE,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`
+      }
+    })
+
+    const data = await response.json()
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// 🔥 PAYMENT INTENT
 app.post('/create-payment-intent', async (req, res) => {
   try {
     const { amountInCents, customerEmail } = req.body
