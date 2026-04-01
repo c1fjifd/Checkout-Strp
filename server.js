@@ -155,12 +155,6 @@ app.post('/create-payment-intent', async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 })
-
-app.listen(PORT, () => {
-  console.log('Servidor rodando...')
-})
-
-
 app.get('/admin/payments', async (req, res) => {
   try {
     const authHeader = req.headers.authorization || ''
@@ -199,3 +193,9 @@ app.get('/admin/payments', async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 })
+
+app.listen(PORT, () => {
+  console.log('Servidor rodando...')
+})
+
+
