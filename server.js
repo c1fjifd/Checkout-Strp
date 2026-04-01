@@ -159,3 +159,43 @@ app.post('/create-payment-intent', async (req, res) => {
 app.listen(PORT, () => {
   console.log('Servidor rodando...')
 })
+
+
+app.get('/admin/payments', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || ''
+    const token = authHeader.replace('Bearer ', '')
+
+    if (!token) {
+      return res.status(401).json({ error: 'Sem token' })
+    }
+
+    // valida usuário no Supabase
+    const userRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        'apikey': process.env.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    const user = await userRes.json()
+
+    if (!user?.email || user.email !== 'admin@gmail.com') {
+      return res.status(403).json({ error: 'Não autorizado' })
+    }
+
+    // busca pagamentos
+    const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/payments?select=*&order=created_at.desc`, {
+      headers: {
+        'apikey': process.env.SUPABASE_SERVICE_ROLE,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`
+      }
+    })
+
+    const data = await response.json()
+    res.json(data)
+
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
