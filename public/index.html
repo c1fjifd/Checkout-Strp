@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -13,19 +13,24 @@
 
 <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
 
-  <h1 class="text-2xl font-bold mb-4">Pagamento</h1>
+  <h1 class="text-2xl font-bold mb-4">Bezahlung</h1>
 
-  <input id="email" type="email" placeholder="Email"
+  <input id="email" type="email" placeholder="E-Mail"
     class="w-full mb-3 border p-3 rounded-xl" />
 
-  <input id="amount" type="number" value="1990"
-    class="w-full mb-4 border p-3 rounded-xl" />
+  <input id="name" type="text" placeholder="Vollständiger Name"
+    class="w-full mb-3 border p-3 rounded-xl" />
+
+  <input id="phone" type="text" placeholder="Telefon"
+    class="w-full mb-3 border p-3 rounded-xl" />
+
+  <div id="address-element" class="mb-4"></div>
 
   <div id="payment-element" class="mb-4"></div>
 
   <button id="submit"
     class="w-full bg-blue-600 text-white py-3 rounded-xl">
-    Pagar
+    Jetzt bezahlen €97,90
   </button>
 
   <p id="msg" class="text-red-500 mt-3"></p>
@@ -38,15 +43,11 @@ const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwC
 let elements
 
 async function init() {
-  const amount = document.getElementById('amount').value
-  const email = document.getElementById('email').value
-
   const res = await fetch('/create-payment-intent', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      amountInCents: parseInt(amount),
-      customerEmail: email
+      amountInCents: 9790
     })
   })
 
@@ -58,15 +59,21 @@ async function init() {
 
   const paymentElement = elements.create('payment')
   paymentElement.mount('#payment-element')
+
+  const addressElement = elements.create("address", {
+    mode: "shipping"
+  })
+
+  addressElement.mount('#address-element')
 }
 
-document.getElementById('amount').addEventListener('change', init)
-document.getElementById('email').addEventListener('change', init)
-
 document.getElementById('submit').addEventListener('click', async () => {
+  const email = document.getElementById('email').value
+
   const { error } = await stripe.confirmPayment({
     elements,
     confirmParams: {
+      receipt_email: email,
       return_url: window.location.origin + '/sucesso.html'
     }
   })
@@ -76,7 +83,6 @@ document.getElementById('submit').addEventListener('click', async () => {
   }
 })
 
-// inicia ao carregar
 init()
 </script>
 
