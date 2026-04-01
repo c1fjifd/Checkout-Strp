@@ -1,169 +1,127 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Checkout</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://js.stripe.com/v3/"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Checkout Seguro</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://js.stripe.com/v3/"></script>
+
+<style>
+  body { background:#f7f7f7 }
+</style>
 </head>
 
-<body class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
-    <h1 class="text-2xl font-bold mb-2">Sichere Zahlung</h1>
-    <p class="text-gray-500 mb-6">Lieferung nach Deutschland • €97,90</p>
+<body class="flex justify-center p-4">
 
-    <input id="email" type="email" placeholder="E-Mail" class="w-full mb-3 border p-3 rounded-xl" />
-    <input id="name" type="text" placeholder="Vollständiger Name" class="w-full mb-3 border p-3 rounded-xl" />
-    <input id="phone" type="text" placeholder="Telefonnummer" class="w-full mb-3 border p-3 rounded-xl" />
-    <input id="line1" type="text" placeholder="Straße und Hausnummer" class="w-full mb-3 border p-3 rounded-xl" />
-    <input id="line2" type="text" placeholder="Adresszeile 2 (optional)" class="w-full mb-3 border p-3 rounded-xl" />
-    <input id="postal" type="text" placeholder="Postleitzahl" class="w-full mb-3 border p-3 rounded-xl" />
-    <input id="city" type="text" placeholder="Ort" class="w-full mb-4 border p-3 rounded-xl" />
+<div class="w-full max-w-md">
 
-    <div id="paymentBox" class="hidden">
-      <div id="payment-element" class="mb-4"></div>
-    </div>
-
-    <button id="prepareBtn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">
-      Weiter zur Zahlung
-    </button>
-
-    <button id="payBtn" class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hidden mt-3">
-      Jetzt bezahlen €97,90
-    </button>
-
-    <p id="msg" class="text-sm text-red-600 mt-3"></p>
+  <!-- LOGO -->
+  <div class="flex justify-center mb-4">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Otto_logo.svg" class="h-10">
   </div>
 
-  <script>
-    const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwCKx6ykphs9617ZR9JkMjqf0mf2zrq3pUc9xt2WLtn00gCMYs146")
+  <!-- PRODUTO -->
+  <div class="bg-white rounded-2xl p-4 shadow mb-4">
+    <img src="https://images.unsplash.com/photo-1695048133142-1a20484d2569" class="rounded-xl mb-3">
+    
+    <h2 class="font-bold text-lg">iPhone 17 Pro Max 512GB</h2>
+    
+    <p class="text-green-600 font-bold text-xl mt-1">€97,90</p>
 
-    let elements = null
+    <div class="text-sm text-gray-500 mt-2">
+      ⭐⭐⭐⭐⭐ 4.8/5 • 5.214 Kunden
+    </div>
 
-    const emailEl = document.getElementById('email')
-    const nameEl = document.getElementById('name')
-    const phoneEl = document.getElementById('phone')
-    const line1El = document.getElementById('line1')
-    const line2El = document.getElementById('line2')
-    const postalEl = document.getElementById('postal')
-    const cityEl = document.getElementById('city')
+    <div class="text-red-500 text-sm mt-1">
+      🔥 Nur noch 7 Stück verfügbar
+    </div>
+  </div>
 
-    const prepareBtn = document.getElementById('prepareBtn')
-    const payBtn = document.getElementById('payBtn')
-    const paymentBox = document.getElementById('paymentBox')
-    const msg = document.getElementById('msg')
+  <!-- CONFIANÇA -->
+  <div class="flex justify-between text-xs text-gray-600 mb-4">
+    <span>🔒 Sicher</span>
+    <span>🚚 Lieferung DE</span>
+    <span>💳 Geschützt</span>
+  </div>
 
-    function getFormData() {
-      return {
-        email: emailEl.value.trim(),
-        name: nameEl.value.trim(),
-        phone: phoneEl.value.trim(),
-        line1: line1El.value.trim(),
-        line2: line2El.value.trim(),
-        postal: postalEl.value.trim(),
-        city: cityEl.value.trim()
-      }
-    }
+  <!-- FORM -->
+  <div class="bg-white p-4 rounded-2xl shadow">
 
-    function validateForm(data) {
-      if (!data.email || !data.name || !data.phone || !data.line1 || !data.postal || !data.city) {
-        return 'Bitte füllen Sie alle Pflichtfelder aus.'
-      }
-      return ''
-    }
+    <input id="email" placeholder="E-Mail" class="w-full mb-2 p-3 border rounded-xl"/>
+    <input id="name" placeholder="Name" class="w-full mb-2 p-3 border rounded-xl"/>
+    <input id="phone" placeholder="Telefon" class="w-full mb-2 p-3 border rounded-xl"/>
+    <input id="line1" placeholder="Adresse" class="w-full mb-2 p-3 border rounded-xl"/>
+    <input id="postal" placeholder="PLZ" class="w-full mb-2 p-3 border rounded-xl"/>
+    <input id="city" placeholder="Stadt" class="w-full mb-3 p-3 border rounded-xl"/>
 
-    prepareBtn.addEventListener('click', async () => {
-      msg.textContent = ''
+    <div id="payment-element" class="mb-4"></div>
 
-      const form = getFormData()
-      const errorText = validateForm(form)
+    <button id="payBtn"
+      class="w-full bg-green-600 text-white p-4 rounded-xl font-bold text-lg">
+      Sicher bezahlen 🔒
+    </button>
 
-      if (errorText) {
-        msg.textContent = errorText
-        return
-      }
+    <p id="msg" class="text-red-500 text-sm mt-2"></p>
+  </div>
 
-      prepareBtn.disabled = true
-      prepareBtn.textContent = 'Wird vorbereitet...'
+</div>
 
-      try {
-        const res = await fetch('/create-payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form)
-        })
+<script>
+const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwCKx6ykphs9617ZR9JkMjqf0mf2zrq3pUc9xt2WLtn00gCMYs146")
 
-        const data = await res.json()
+let elements
 
-        if (!res.ok) {
-          throw new Error(data.error || 'Fehler beim Starten der Zahlung.')
+async function init() {
+  const res = await fetch('/create-payment-intent', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({})
+  })
+
+  const data = await res.json()
+
+  elements = stripe.elements({ clientSecret:data.clientSecret })
+
+  const payment = elements.create('payment')
+  payment.mount('#payment-element')
+}
+
+init()
+
+document.getElementById('payBtn').onclick = async () => {
+
+  const email = document.getElementById('email').value
+  const name = document.getElementById('name').value
+  const phone = document.getElementById('phone').value
+  const line1 = document.getElementById('line1').value
+  const postal = document.getElementById('postal').value
+  const city = document.getElementById('city').value
+
+  const { error } = await stripe.confirmPayment({
+    elements,
+    confirmParams:{
+      receipt_email: email,
+      shipping:{
+        name,
+        phone,
+        address:{
+          line1,
+          postal_code: postal,
+          city,
+          country:'DE'
         }
+      },
+      return_url: window.location.origin + "/sucesso.html"
+    }
+  })
 
-        elements = stripe.elements({
-          clientSecret: data.clientSecret,
-          locale: 'de'
-        })
+  if(error){
+    document.getElementById('msg').textContent = error.message
+  }
+}
+</script>
 
-        const paymentElement = elements.create('payment')
-        paymentElement.mount('#payment-element')
-
-        paymentBox.classList.remove('hidden')
-        payBtn.classList.remove('hidden')
-        prepareBtn.classList.add('hidden')
-
-        emailEl.disabled = true
-        nameEl.disabled = true
-        phoneEl.disabled = true
-        line1El.disabled = true
-        line2El.disabled = true
-        postalEl.disabled = true
-        cityEl.disabled = true
-      } catch (error) {
-        msg.textContent = error.message || 'Unbekannter Fehler.'
-        prepareBtn.disabled = false
-        prepareBtn.textContent = 'Weiter zur Zahlung'
-      }
-    })
-
-    payBtn.addEventListener('click', async () => {
-      msg.textContent = ''
-
-      if (!elements) {
-        msg.textContent = 'Zahlungselement nicht geladen.'
-        return
-      }
-
-      payBtn.disabled = true
-      payBtn.textContent = 'Wird verarbeitet...'
-
-      const form = getFormData()
-
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          receipt_email: form.email,
-          shipping: {
-            name: form.name,
-            phone: form.phone,
-            address: {
-              line1: form.line1,
-              line2: form.line2 || '',
-              postal_code: form.postal,
-              city: form.city,
-              country: 'DE'
-            }
-          },
-          return_url: window.location.origin + '/sucesso.html'
-        }
-      })
-
-      if (error) {
-        msg.textContent = error.message || 'Zahlung fehlgeschlagen.'
-        payBtn.disabled = false
-        payBtn.textContent = 'Jetzt bezahlen €97,90'
-      }
-    })
-  </script>
 </body>
 </html>
