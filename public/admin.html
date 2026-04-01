@@ -2,114 +2,143 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
-<body>
-
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-
-const supabase = createClient(
-  'https://lrgboocfomodbxottfbn.supabase.co',
-  'sb_publishable_SbhOPr5cYcCoaS_iy4KkGg_LSoD5CJF'
-)
-
-// 🔐 BLOQUEIO ANTES DE QUALQUER HTML
-const { data: { session } } = await supabase.auth.getSession()
-
-if (!session) {
-  location.href = '/login.html'
-  throw new Error('Sem login')
-}
-
-// 🔥 VALIDA EMAIL (SEGURANÇA)
-const { data: { user } } = await supabase.auth.getUser()
-
-if (!user || user.email !== 'admin@gmail.com') {
-  await supabase.auth.signOut()
-  location.href = '/login.html'
-  throw new Error('Não autorizado')
-}
-
-// 🚀 AGORA RENDERIZA A PÁGINA
-document.body.innerHTML = `
-<div class="bg-gray-100 min-h-screen p-6">
-  <div class="max-w-7xl mx-auto">
-
-    <div class="flex justify-between mb-6">
-      <h1 class="text-3xl font-bold">Pedidos</h1>
-      <button id="logout" class="bg-red-500 text-white px-4 py-2 rounded-xl">Sair</button>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div id="app" class="max-w-7xl mx-auto">
+    <div class="bg-white rounded-2xl shadow p-6">
+      <p id="status" class="text-gray-600">Validando acesso...</p>
     </div>
-
-    <table class="w-full bg-white rounded-xl overflow-hidden text-sm">
-      <thead>
-        <tr class="border-b">
-          <th class="p-3">Status</th>
-          <th class="p-3">Nome</th>
-          <th class="p-3">Email</th>
-          <th class="p-3">Telefone</th>
-          <th class="p-3">Valor</th>
-          <th class="p-3">Cidade</th>
-          <th class="p-3">CEP</th>
-          <th class="p-3">Endereço</th>
-          <th class="p-3">Data</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-
   </div>
-</div>
-`
 
-// logout
-document.getElementById('logout').onclick = async () => {
-  await supabase.auth.signOut()
-  localStorage.clear()
-  location.href = '/login.html'
-}
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-// 🔥 BUSCA DADOS DO BACKEND (SEGURANÇA REAL)
-const res = await fetch('/admin/payments', {
-  headers: {
-    Authorization: `Bearer ${session.access_token}`
-  }
-})
+    const supabase = createClient(
+      'https://lrgboocfomodbxottfbn.supabase.co',
+      'sb_publishable_SbhOPr5cYcCoaS_iy4KkGg_LSoD5CJF'
+    )
 
-if (!res.ok) {
-  location.href = '/login.html'
-}
+    const app = document.getElementById('app')
+    const statusEl = document.getElementById('status')
 
-const data = await res.json()
+    function money(v) {
+      return `€ ${((v || 0) / 100).toFixed(2)}`
+    }
 
-const tbody = document.getElementById('tbody')
+    function dateFmt(v) {
+      if (!v) return '-'
+      return new Date(v).toLocaleString('pt-BR')
+    }
 
-if (!data || data.length === 0) {
-  tbody.innerHTML = `<tr><td class="p-3">Nenhum pedido</td></tr>`
-} else {
-  data.forEach(p => {
-    const tr = document.createElement('tr')
+    function statusFmt(v) {
+      if (v === 'succeeded') return '<span class="text-green-600 font-semibold">Comprou</span>'
+      if (v === 'failed') return '<span class="text-red-600 font-semibold">Falhou</span>'
+      if (v === 'started') return '<span class="text-yellow-600 font-semibold">Tentou</span>'
+      return `<span class="text-gray-600 font-semibold">${v || '-'}</span>`
+    }
 
-    const endereco = [p.address_line1, p.address_line2].filter(Boolean).join(' ')
+    async function goLogin() {
+      try { await supabase.auth.signOut() } catch {}
+      localStorage.clear()
+      sessionStorage.clear()
+      window.location.href = '/login.html'
+    }
 
-    tr.innerHTML = `
-      <td class="p-3">${p.status}</td>
-      <td class="p-3">${p.customer_name || '-'}</td>
-      <td class="p-3">${p.email || '-'}</td>
-      <td class="p-3">${p.customer_phone || '-'}</td>
-      <td class="p-3">€ ${(p.amount / 100).toFixed(2)}</td>
-      <td class="p-3">${p.address_city || '-'}</td>
-      <td class="p-3">${p.address_postal_code || '-'}</td>
-      <td class="p-3">${endereco || '-'}</td>
-      <td class="p-3">${new Date(p.created_at).toLocaleString()}</td>
-    `
+    async function start() {
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
 
-    tbody.appendChild(tr)
-  })
-}
-</script>
+        if (sessionError || !sessionData?.session?.access_token) {
+          return goLogin()
+        }
 
+        const token = sessionData.session.access_token
+
+        const res = await fetch('/admin/payments', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        if (res.status === 401 || res.status === 403) {
+          return goLogin()
+        }
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          statusEl.textContent = data?.error || 'Erro ao carregar pedidos.'
+          return
+        }
+
+        app.innerHTML = `
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold">Pedidos</h1>
+            <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-xl">Sair</button>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow p-4 overflow-x-auto">
+            <p class="mb-4 text-sm text-gray-500">${Array.isArray(data) ? data.length : 0} pedido(s) encontrado(s).</p>
+
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="border-b">
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Nome</th>
+                  <th class="p-3">Email</th>
+                  <th class="p-3">Telefone</th>
+                  <th class="p-3">Valor</th>
+                  <th class="p-3">País</th>
+                  <th class="p-3">Cidade</th>
+                  <th class="p-3">CEP</th>
+                  <th class="p-3">Endereço</th>
+                  <th class="p-3">Data/Hora</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+        `
+
+        document.getElementById('logoutBtn').addEventListener('click', goLogin)
+
+        const tbody = document.getElementById('tbody')
+
+        if (!Array.isArray(data) || data.length === 0) {
+          tbody.innerHTML = `<tr><td class="p-3 text-gray-500" colspan="10">Nenhum pedido encontrado.</td></tr>`
+          return
+        }
+
+        data.forEach((p) => {
+          const tr = document.createElement('tr')
+          tr.className = 'border-b align-top'
+
+          const endereco = [p.address_line1, p.address_line2].filter(Boolean).join(' ')
+
+          tr.innerHTML = `
+            <td class="p-3">${statusFmt(p.status)}</td>
+            <td class="p-3">${p.customer_name || '-'}</td>
+            <td class="p-3">${p.email || '-'}</td>
+            <td class="p-3">${p.customer_phone || '-'}</td>
+            <td class="p-3">${money(p.amount)}</td>
+            <td class="p-3">${p.address_country || '-'}</td>
+            <td class="p-3">${p.address_city || '-'}</td>
+            <td class="p-3">${p.address_postal_code || '-'}</td>
+            <td class="p-3">${endereco || '-'}</td>
+            <td class="p-3">${dateFmt(p.created_at)}</td>
+          `
+
+          tbody.appendChild(tr)
+        })
+      } catch (err) {
+        statusEl.textContent = err?.message || 'Erro inesperado no painel.'
+      }
+    }
+
+    start()
+  </script>
 </body>
 </html>
