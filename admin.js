@@ -1,25 +1,31 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
 const supabase = createClient(
-  "https://lrgboocfomodbxottfbn.supabase.co",
-  "sb_publishable_SbhOPr5cYcCoaS_iy4KkGg_LSoD5CJF"
+  'https://lrgboocfomodbxottfbn.supabase.co',
+  'sb_publishable_SbhOPr5cYcCoaS_iy4KkGg_LSoD5CJF'
 )
 
-const ADMIN_EMAIL = 'adm133@gmail.com'
+const ADMIN_EMAIL = 'admin@gmail.com'
 
-const {
-  data: { session }
-} = await supabase.auth.getSession()
+async function protectPage() {
+  const { data, error } = await supabase.auth.getUser()
 
-if (!session || !session.user || session.user.email !== ADMIN_EMAIL) {
-  await supabase.auth.signOut()
-  window.location.href = '/login.html'
-  throw new Error('Acesso negado')
+  if (error || !data?.user || data.user.email !== ADMIN_EMAIL) {
+    await supabase.auth.signOut()
+    localStorage.clear()
+    sessionStorage.clear()
+    window.location.replace('/login.html')
+    throw new Error('Acesso negado')
+  }
+
+  return data.user
 }
 
 window.logout = async () => {
   await supabase.auth.signOut()
-  window.location.href = '/login.html'
+  localStorage.clear()
+  sessionStorage.clear()
+  window.location.replace('/login.html')
 }
 
 function formatStatus(status) {
@@ -35,6 +41,8 @@ function formatDate(value) {
 }
 
 async function load() {
+  await protectPage()
+
   const { data, error } = await supabase
     .from('payments')
     .select('*')
