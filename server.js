@@ -9,6 +9,7 @@ dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3000
+const ADMIN_EMAIL = 'admin@gmail.com'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
@@ -22,7 +23,6 @@ async function savePayment(payload) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates',
       'apikey': process.env.SUPABASE_SERVICE_ROLE,
       'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`
     },
@@ -42,6 +42,18 @@ async function updatePaymentByIntentId(intentId, payload) {
   })
 }
 
+async function getSupabaseUser(accessToken) {
+  const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      'apikey': process.env.SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${accessToken}`
+    }
+  })
+
+  if (!response.ok) return null
+  return await response.json()
+}
+
 // WEBHOOK
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
@@ -56,15 +68,15 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
       const pi = event.data.object
 
       await updatePaymentByIntentId(pi.id, {
-        email: pi.receipt_email || pi.metadata.customer_email || null,
-        customer_name: pi.metadata.customer_name || null,
-        customer_phone: pi.metadata.customer_phone || null,
-        address_line1: pi.metadata.address_line1 || null,
-        address_line2: pi.metadata.address_line2 || null,
-        address_city: pi.metadata.address_city || null,
-        address_state: pi.metadata.address_state || null,
-        address_postal_code: pi.metadata.address_postal_code || null,
-        address_country: pi.metadata.address_country || null,
+        email: pi.receipt_email || null,
+        customer_name: pi.shipping?.name || null,
+        customer_phone: pi.shipping?.phone || null,
+        address_line1: pi.shipping?.address?.line1 || null,
+        address_line2: pi.shipping?.address?.line2 || null,
+        address_city: pi.shipping?.address?.city || null,
+        address_state: pi.shipping?.address?.state || null,
+        address_postal_code: pi.shipping?.address?.postal_code || null,
+        address_country: pi.shipping?.address?.country || null,
         amount: pi.amount,
         currency: pi.currency,
         status: 'succeeded'
@@ -75,15 +87,15 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
       const pi = event.data.object
 
       await updatePaymentByIntentId(pi.id, {
-        email: pi.receipt_email || pi.metadata.customer_email || null,
-        customer_name: pi.metadata.customer_name || null,
-        customer_phone: pi.metadata.customer_phone || null,
-        address_line1: pi.metadata.address_line1 || null,
-        address_line2: pi.metadata.address_line2 || null,
-        address_city: pi.metadata.address_city || null,
-        address_state: pi.metadata.address_state || null,
-        address_postal_code: pi.metadata.address_postal_code || null,
-        address_country: pi.metadata.address_country || null,
+        email: pi.receipt_email || null,
+        customer_name: pi.shipping?.name || null,
+        customer_phone: pi.shipping?.phone || null,
+        address_line1: pi.shipping?.address?.line1 || null,
+        address_line2: pi.shipping?.address?.line2 || null,
+        address_city: pi.shipping?.address?.city || null,
+        address_state: pi.shipping?.address?.state || null,
+        address_postal_code: pi.shipping?.address?.postal_code || null,
+        address_country: pi.shipping?.address?.country || null,
         amount: pi.amount,
         currency: pi.currency,
         status: 'failed'
@@ -100,50 +112,17 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
 
-// CRIAR PAYMENT INTENT + SALVAR TENTATIVA
+// CHECKOUT
 app.post('/create-payment-intent', async (req, res) => {
   try {
-    const {
-      customerEmail,
-      customerName,
-      customerPhone,
-      addressLine1,
-      addressLine2,
-      addressCity,
-      addressState,
-      addressPostalCode,
-      addressCountry
-    } = req.body
-
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 9790,
       currency: 'eur',
-      receipt_email: customerEmail || undefined,
-      automatic_payment_methods: { enabled: true },
-      metadata: {
-        customer_email: customerEmail || '',
-        customer_name: customerName || '',
-        customer_phone: customerPhone || '',
-        address_line1: addressLine1 || '',
-        address_line2: addressLine2 || '',
-        address_city: addressCity || '',
-        address_state: addressState || '',
-        address_postal_code: addressPostalCode || '',
-        address_country: addressCountry || ''
-      }
+      automatic_payment_methods: { enabled: true }
     })
 
     await savePayment({
       stripe_session_id: paymentIntent.id,
-      email: customerEmail || null,
-      customer_name: customerName || null,
-      customer_phone: customerPhone || null,
-      address_line1: addressLine1 || null,
-      address_line2: addressLine2 || null,
-      address_city: addressCity || null,
-      address_state: addressState || null,
-      address_postal_code: addressPostalCode || null,
-      address_country: addressCountry || null,
       amount: 9790,
       currency: 'eur',
       status: 'started'
@@ -155,30 +134,27 @@ app.post('/create-payment-intent', async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 })
+
+// ADMIN SEGURO
 app.get('/admin/payments', async (req, res) => {
   try {
     const authHeader = req.headers.authorization || ''
-    const token = authHeader.replace('Bearer ', '')
+    const token = authHeader.replace('Bearer ', '').trim()
 
     if (!token) {
       return res.status(401).json({ error: 'Sem token' })
     }
 
-    // valida usuário no Supabase
-    const userRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        'apikey': process.env.SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`
-      }
-    })
+    const user = await getSupabaseUser(token)
 
-    const user = await userRes.json()
+    if (!user || !user.email) {
+      return res.status(401).json({ error: 'Usuário inválido' })
+    }
 
-    if (!user?.email || user.email !== 'admin@gmail.com') {
+    if (user.email !== ADMIN_EMAIL) {
       return res.status(403).json({ error: 'Não autorizado' })
     }
 
-    // busca pagamentos
     const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/payments?select=*&order=created_at.desc`, {
       headers: {
         'apikey': process.env.SUPABASE_SERVICE_ROLE,
@@ -188,8 +164,8 @@ app.get('/admin/payments', async (req, res) => {
 
     const data = await response.json()
     res.json(data)
-
   } catch (error) {
+    console.error('Admin payments error:', error.message)
     res.status(500).json({ error: error.message })
   }
 })
@@ -197,5 +173,3 @@ app.get('/admin/payments', async (req, res) => {
 app.listen(PORT, () => {
   console.log('Servidor rodando...')
 })
-
-
