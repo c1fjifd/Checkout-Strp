@@ -18,6 +18,7 @@ const __dirname = path.dirname(__filename)
 
 app.use(cors())
 
+// ===== SUPABASE =====
 async function savePayment(payload) {
   return fetch(`${process.env.SUPABASE_URL}/rest/v1/payments`, {
     method: 'POST',
@@ -54,10 +55,11 @@ async function getSupabaseUser(accessToken) {
   return await response.json()
 }
 
-// WEBHOOK
+// ===== WEBHOOK =====
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const sig = req.headers['stripe-signature']
+
     const event = stripe.webhooks.constructEvent(
       req.body,
       sig,
@@ -109,12 +111,25 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
   }
 })
 
+// IMPORTANTE: vem DEPOIS do webhook
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
 
-// CHECKOUT
+// ===== CHECKOUT =====
 app.post('/create-payment-intent', async (req, res) => {
   try {
+    const {
+      email,
+      name,
+      phone,
+      line1,
+      line2,
+      postal,
+      city
+    } = req.body
+
+    console.log('BODY:', req.body)
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 9790,
       currency: 'eur',
@@ -123,6 +138,14 @@ app.post('/create-payment-intent', async (req, res) => {
 
     await savePayment({
       stripe_session_id: paymentIntent.id,
+      email: email || null,
+      customer_name: name || null,
+      customer_phone: phone || null,
+      address_line1: line1 || null,
+      address_line2: line2 || null,
+      address_city: city || null,
+      address_postal_code: postal || null,
+      address_country: 'DE',
       amount: 9790,
       currency: 'eur',
       status: 'started'
@@ -135,7 +158,7 @@ app.post('/create-payment-intent', async (req, res) => {
   }
 })
 
-// ADMIN SEGURO
+// ===== ADMIN =====
 app.get('/admin/payments', async (req, res) => {
   try {
     const authHeader = req.headers.authorization || ''
