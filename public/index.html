@@ -4,87 +4,214 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Checkout</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://js.stripe.com/v3/"></script>
 </head>
 
 <body class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
 
-<div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+    <h1 class="text-2xl font-bold mb-2">Sichere Zahlung</h1>
+    <p class="text-gray-500 mb-6">Lieferung nach Deutschland • €97,90</p>
 
-  <h1 class="text-2xl font-bold mb-4">Bezahlung</h1>
+    <input
+      id="email"
+      type="email"
+      placeholder="E-Mail"
+      class="w-full mb-3 border p-3 rounded-xl"
+    />
 
-  <input id="email" type="email" placeholder="E-Mail"
-    class="w-full mb-3 border p-3 rounded-xl" />
+    <input
+      id="name"
+      type="text"
+      placeholder="Vollständiger Name"
+      class="w-full mb-3 border p-3 rounded-xl"
+    />
 
-  <input id="name" type="text" placeholder="Vollständiger Name"
-    class="w-full mb-3 border p-3 rounded-xl" />
+    <input
+      id="phone"
+      type="text"
+      placeholder="Telefon"
+      class="w-full mb-4 border p-3 rounded-xl"
+    />
 
-  <input id="phone" type="text" placeholder="Telefon"
-    class="w-full mb-3 border p-3 rounded-xl" />
+    <div id="address-element" class="mb-4"></div>
+    <div id="payment-element" class="mb-4"></div>
 
-  <div id="address-element" class="mb-4"></div>
+    <button
+      id="submit"
+      class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold"
+    >
+      Jetzt bezahlen €97,90
+    </button>
 
-  <div id="payment-element" class="mb-4"></div>
+    <p id="msg" class="text-sm text-red-600 mt-3"></p>
+  </div>
 
-  <button id="submit"
-    class="w-full bg-blue-600 text-white py-3 rounded-xl">
-    Jetzt bezahlen €97,90
-  </button>
+  <script>
+    const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwCKx6ykphs9617ZR9JkMjqf0mf2zrq3pUc9xt2WLtn00gCMYs146")
 
-  <p id="msg" class="text-red-500 mt-3"></p>
+    let elements
+    let paymentElement
+    let addressElement
 
-</div>
+    async function init() {
+      const email = document.getElementById('email').value.trim()
+      const name = document.getElementById('name').value.trim()
+      const phone = document.getElementById('phone').value.trim()
 
-<script>
-const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwCKx6ykphs9617ZR9JkMjqf0mf2zrq3pUc9xt2WLtn00gCMYs146")
+      const res = await fetch('/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerEmail: email,
+          customerName: name,
+          customerPhone: phone
+        })
+      })
 
-let elements
+      const data = await res.json()
 
-async function init() {
-  const res = await fetch('/create-payment-intent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      amountInCents: 9790
-    })
-  })
+      if (!res.ok) {
+        document.getElementById('msg').textContent = data.error || 'Fehler beim Starten der Zahlung.'
+        return
+      }
 
-  const data = await res.json()
+      elements = stripe.elements({
+        clientSecret: data.clientSecret,
+        appearance: { theme: 'stripe' },
+        locale: 'de'
+      })
 
-  elements = stripe.elements({
-    clientSecret: data.clientSecret
-  })
+      addressElement = elements.create('address', {
+        mode: 'shipping',
+        fields: { phone: 'always' },
+        validation: { phone: { required: 'always' } },
+        defaultValues: {
+          name,
+          address: {
+            country: 'DE'
+          }
+        }
+      })
 
-  const paymentElement = elements.create('payment')
-  paymentElement.mount('#payment-element')
+      paymentElement = elements.create('payment')
 
-  const addressElement = elements.create("address", {
-    mode: "shipping"
-  })
-
-  addressElement.mount('#address-element')
-}
-
-document.getElementById('submit').addEventListener('click', async () => {
-  const email = document.getElementById('email').value
-
-  const { error } = await stripe.confirmPayment({
-    elements,
-    confirmParams: {
-      receipt_email: email,
-      return_url: window.location.origin + '/sucesso.html'
+      addressElement.mount('#address-element')
+      paymentElement.mount('#payment-element')
     }
-  })
 
-  if (error) {
-    document.getElementById('msg').textContent = error.message
-  }
-})
+    document.getElementById('submit').addEventListener('click', async () => {
+      const msg = document.getElementById('msg')
+      const btn = document.getElementById('submit')
 
-init()
-</script>
+      msg.textContent = ''
+      btn.disabled = true
+      btn.textContent = 'Wird verarbeitet...'
 
+      try {
+        const email = document.getElementById('email').value.trim()
+        const name = document.getElementById('name').value.trim()
+        const phone = document.getElementById('phone').value.trim()
+
+        if (!email || !name || !phone) {
+          throw new Error('Bitte füllen Sie E-Mail, Name und Telefon aus.')
+        }
+
+        const addressResult = await addressElement.getValue()
+
+        if (!addressResult.complete) {
+          throw new Error('Bitte füllen Sie die Lieferadresse vollständig aus.')
+        }
+
+        const address = addressResult.value.address || {}
+
+        const createRes = await fetch('/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerEmail: email,
+            customerName: name,
+            customerPhone: phone,
+            addressLine1: address.line1 || '',
+            addressLine2: address.line2 || '',
+            addressCity: address.city || '',
+            addressState: address.state || '',
+            addressPostalCode: address.postal_code || '',
+            addressCountry: address.country || 'DE'
+          })
+        })
+
+        const createData = await createRes.json()
+
+        if (!createRes.ok) {
+          throw new Error(createData.error || 'Fehler beim Erstellen der Zahlung.')
+        }
+
+        const payElements = stripe.elements({
+          clientSecret: createData.clientSecret,
+          appearance: { theme: 'stripe' },
+          locale: 'de'
+        })
+
+        const payAddressElement = payElements.create('address', {
+          mode: 'shipping',
+          fields: { phone: 'always' },
+          validation: { phone: { required: 'always' } },
+          defaultValues: {
+            name,
+            phone,
+            address: {
+              line1: address.line1 || '',
+              line2: address.line2 || '',
+              city: address.city || '',
+              state: address.state || '',
+              postal_code: address.postal_code || '',
+              country: address.country || 'DE'
+            }
+          }
+        })
+
+        const payPaymentElement = payElements.create('payment')
+
+        document.getElementById('address-element').innerHTML = ''
+        document.getElementById('payment-element').innerHTML = ''
+
+        payAddressElement.mount('#address-element')
+        payPaymentElement.mount('#payment-element')
+
+        const { error } = await stripe.confirmPayment({
+          elements: payElements,
+          confirmParams: {
+            receipt_email: email,
+            shipping: {
+              name,
+              phone,
+              address: {
+                line1: address.line1 || '',
+                line2: address.line2 || '',
+                city: address.city || '',
+                state: address.state || '',
+                postal_code: address.postal_code || '',
+                country: address.country || 'DE'
+              }
+            },
+            return_url: window.location.origin + '/sucesso.html'
+          }
+        })
+
+        if (error) {
+          msg.textContent = error.message || 'Zahlung fehlgeschlagen.'
+        }
+      } catch (error) {
+        msg.textContent = error.message || 'Unbekannter Fehler.'
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Jetzt bezahlen €97,90'
+      }
+    })
+
+    init()
+  </script>
 </body>
 </html>
