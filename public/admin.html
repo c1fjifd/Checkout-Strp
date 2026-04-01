@@ -2,43 +2,81 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Admin</title>
+  <title>Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-gray-100 p-6">
-  <div class="max-w-7xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold">Pedidos</h1>
-      <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-xl">
-        Sair
-      </button>
-    </div>
 
-    <div class="bg-white rounded-xl p-4 shadow overflow-x-auto">
-      <p id="statusMsg" class="mb-4 text-sm text-gray-500">Carregando...</p>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-      <table class="w-full text-left text-sm">
-        <thead>
-          <tr class="border-b">
-            <th class="p-3">Status</th>
-            <th class="p-3">Nome</th>
-            <th class="p-3">Email</th>
-            <th class="p-3">Telefone</th>
-            <th class="p-3">Valor</th>
-            <th class="p-3">País</th>
-            <th class="p-3">Cidade</th>
-            <th class="p-3">CEP</th>
-            <th class="p-3">Endereço</th>
-            <th class="p-3">Data</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
+const supabase = createClient(
+  "https://lrgboocfomodbxottfbn.supabase.co",
+  "sb_publishable_SbhOPr5cYcCoaS_iy4KkGg_LSoD5CJF"
+)
+
+const ADMIN_EMAIL = "admin@gmail.com"
+
+// 🔐 BLOQUEIO IMEDIATO
+const { data: { user } } = await supabase.auth.getUser()
+
+if (!user || user.email !== ADMIN_EMAIL) {
+  window.location.href = "/login.html"
+}
+
+// 🚀 SE PASSOU, CARREGA A PÁGINA
+document.body.innerHTML = `
+<div class="max-w-7xl mx-auto">
+  <div class="flex justify-between mb-6">
+    <h1 class="text-3xl font-bold">Pedidos</h1>
+    <button id="logout" class="bg-red-500 text-white px-4 py-2 rounded-xl">Sair</button>
   </div>
 
-  <script type="module" src="/admin.js"></script>
+  <table class="w-full bg-white rounded-xl overflow-hidden">
+    <thead>
+      <tr class="border-b">
+        <th class="p-3">Status</th>
+        <th class="p-3">Email</th>
+        <th class="p-3">Valor</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+`
+
+// logout
+document.getElementById('logout').onclick = async () => {
+  await supabase.auth.signOut()
+  localStorage.clear()
+  location.href = "/login.html"
+}
+
+// carregar pedidos
+const { data } = await supabase
+  .from('payments')
+  .select('*')
+  .order('created_at', { ascending: false })
+
+const tbody = document.getElementById('tbody')
+
+if (!data || data.length === 0) {
+  tbody.innerHTML = "<tr><td class='p-3'>Nenhum pedido</td></tr>"
+} else {
+  data.forEach(p => {
+    const tr = document.createElement('tr')
+
+    tr.innerHTML = `
+      <td class="p-3">${p.status}</td>
+      <td class="p-3">${p.email || '-'}</td>
+      <td class="p-3">€ ${(p.amount / 100).toFixed(2)}</td>
+    `
+
+    tbody.appendChild(tr)
+  })
+}
+</script>
+
 </body>
 </html>
