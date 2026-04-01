@@ -5,27 +5,17 @@ const supabase = createClient(
   'sb_publishable_SbhOPr5cYcCoaS_iy4KkGg_LSoD5CJF'
 )
 
-const ADMIN_EMAIL = 'admin@gmail.com'
+const ADMIN_EMAIL = 'eadmin@gmail.com'
 
-async function protectPage() {
-  const { data, error } = await supabase.auth.getUser()
+const tbody = document.getElementById('tbody')
+const statusMsg = document.getElementById('statusMsg')
+const logoutBtn = document.getElementById('logoutBtn')
 
-  if (error || !data?.user || data.user.email !== ADMIN_EMAIL) {
-    await supabase.auth.signOut()
-    localStorage.clear()
-    sessionStorage.clear()
-    window.location.replace('/login.html')
-    throw new Error('Acesso negado')
-  }
-
-  return data.user
-}
-
-window.logout = async () => {
-  await supabase.auth.signOut()
-  localStorage.clear()
-  sessionStorage.clear()
-  window.location.replace('/login.html')
+function setStatus(text, isError = false) {
+  statusMsg.textContent = text
+  statusMsg.className = isError
+    ? 'mb-4 text-sm text-red-600'
+    : 'mb-4 text-sm text-gray-500'
 }
 
 function formatStatus(status) {
@@ -40,28 +30,46 @@ function formatDate(value) {
   return new Date(value).toLocaleString('pt-BR')
 }
 
-async function load() {
-  await protectPage()
+async function protectPage() {
+  const { data, error } = await supabase.auth.getUser()
+
+  if (error || !data?.user || data.user.email !== ADMIN_EMAIL) {
+    await supabase.auth.signOut()
+    localStorage.clear()
+    sessionStorage.clear()
+    window.location.href = '/login.html'
+    return null
+  }
+
+  return data.user
+}
+
+async function loadOrders() {
+  const user = await protectPage()
+  if (!user) return
+
+  setStatus(`Logado como ${user.email}`)
 
   const { data, error } = await supabase
     .from('payments')
     .select('*')
     .order('created_at', { ascending: false })
 
-  const tbody = document.getElementById('tbody')
   tbody.innerHTML = ''
 
   if (error) {
-    tbody.innerHTML = `<tr><td class="p-3 text-red-600" colspan="10">${error.message}</td></tr>`
+    setStatus(error.message, true)
     return
   }
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td class="p-3 text-gray-500" colspan="10">Nenhum pedido encontrado.</td></tr>`
+    setStatus('Nenhum pedido encontrado.')
     return
   }
 
-  data.forEach(p => {
+  setStatus(`${data.length} pedido(s) encontrado(s).`)
+
+  data.forEach((p) => {
     const tr = document.createElement('tr')
     tr.className = 'border-b align-top'
 
@@ -84,4 +92,11 @@ async function load() {
   })
 }
 
-load()
+logoutBtn.addEventListener('click', async () => {
+  await supabase.auth.signOut()
+  localStorage.clear()
+  sessionStorage.clear()
+  window.location.href = '/login.html'
+})
+
+loadOrders()
