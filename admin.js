@@ -5,7 +5,7 @@ const supabase = createClient(
   'sb_publishable_SbhOPr5cYcCoaS_iy4KkGg_LSoD5CJF'
 )
 
-const ADMIN_EMAIL = 'eadmin@gmail.com'
+const ADMIN_EMAIL = 'admin@gmail.com'
 
 const tbody = document.getElementById('tbody')
 const statusMsg = document.getElementById('statusMsg')
