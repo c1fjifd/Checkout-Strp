@@ -9,7 +9,7 @@
 <script src="https://js.stripe.com/v3/"></script>
 
 <style>
-  body { background:#f7f7f7 }
+body { background:#f7f7f7 }
 </style>
 </head>
 
@@ -24,11 +24,24 @@
 
   <!-- PRODUTO -->
   <div class="bg-white rounded-2xl p-4 shadow mb-4">
-    <img src="https://images.unsplash.com/photo-1695048133142-1a20484d2569" class="rounded-xl mb-3">
-    
-    <h2 class="font-bold text-lg">iPhone 17 Pro Max 512GB</h2>
-    
-    <p class="text-green-600 font-bold text-xl mt-1">€97,90</p>
+
+    <!-- INPUT TROCAR IMAGEM -->
+    <input id="imgInput"
+      placeholder="Cole a URL da imagem do produto"
+      class="w-full mb-3 p-2 border rounded-lg text-sm"/>
+
+    <!-- IMAGEM -->
+    <img id="productImg"
+      src="https://via.placeholder.com/400"
+      class="rounded-xl mb-3 w-full object-cover">
+
+    <h2 class="font-bold text-lg">
+      Apple iPhone 17 Pro Max 512GB
+    </h2>
+
+    <p class="text-green-600 font-bold text-xl mt-1">
+      €97,90
+    </p>
 
     <div class="text-sm text-gray-500 mt-2">
       ⭐⭐⭐⭐⭐ 4.8/5 • 5.214 Kunden
@@ -73,6 +86,12 @@ const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwC
 
 let elements
 
+// TROCAR IMAGEM EM TEMPO REAL
+document.getElementById('imgInput').addEventListener('input', (e) => {
+  document.getElementById('productImg').src = e.target.value
+})
+
+// INICIA STRIPE DIRETO
 async function init() {
   const res = await fetch('/create-payment-intent', {
     method:'POST',
@@ -82,7 +101,9 @@ async function init() {
 
   const data = await res.json()
 
-  elements = stripe.elements({ clientSecret:data.clientSecret })
+  elements = stripe.elements({
+    clientSecret:data.clientSecret
+  })
 
   const payment = elements.create('payment')
   payment.mount('#payment-element')
@@ -90,6 +111,7 @@ async function init() {
 
 init()
 
+// PAGAMENTO
 document.getElementById('payBtn').onclick = async () => {
 
   const email = document.getElementById('email').value
