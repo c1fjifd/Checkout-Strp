@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { display: none; }
+  </style>
 </head>
 
 <body class="bg-gray-100 p-6">
@@ -17,7 +20,7 @@
     </div>
 
     <div class="bg-white rounded-xl p-4 shadow overflow-x-auto">
-      <p id="statusMsg" class="mb-4 text-sm text-gray-500">Carregando...</p>
+      <p id="statusMsg" class="mb-4 text-sm text-gray-500">Validando acesso...</p>
 
       <table class="w-full text-left text-sm">
         <thead>
@@ -39,6 +42,6 @@
     </div>
   </div>
 
-  <script type="module" src="/admin.js"></script>
+  <script type="module" src="/admin.js?v=4"></script>
 </body>
 </html>
