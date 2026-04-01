@@ -21,9 +21,15 @@
     <input id="postal" type="text" placeholder="Postleitzahl" class="w-full mb-3 border p-3 rounded-xl" />
     <input id="city" type="text" placeholder="Ort" class="w-full mb-4 border p-3 rounded-xl" />
 
-    <div id="payment-element" class="mb-4"></div>
+    <div id="paymentBox" class="hidden">
+      <div id="payment-element" class="mb-4"></div>
+    </div>
 
-    <button id="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">
+    <button id="prepareBtn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">
+      Weiter zur Zahlung
+    </button>
+
+    <button id="payBtn" class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hidden mt-3">
       Jetzt bezahlen €97,90
     </button>
 
@@ -33,65 +39,118 @@
   <script>
     const stripe = Stripe("pk_test_51TBgoGEW8oxEd9zwTAYExiMbsojNAhPFukQqgePMWLNCjiwCKx6ykphs9617ZR9JkMjqf0mf2zrq3pUc9xt2WLtn00gCMYs146")
 
-    let elements
+    let elements = null
 
-    async function init() {
-      const res = await fetch('/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      })
+    const emailEl = document.getElementById('email')
+    const nameEl = document.getElementById('name')
+    const phoneEl = document.getElementById('phone')
+    const line1El = document.getElementById('line1')
+    const line2El = document.getElementById('line2')
+    const postalEl = document.getElementById('postal')
+    const cityEl = document.getElementById('city')
 
-      const data = await res.json()
+    const prepareBtn = document.getElementById('prepareBtn')
+    const payBtn = document.getElementById('payBtn')
+    const paymentBox = document.getElementById('paymentBox')
+    const msg = document.getElementById('msg')
 
-      if (!res.ok) {
-        document.getElementById('msg').textContent = data.error || 'Fehler beim Laden des Checkouts.'
-        return
+    function getFormData() {
+      return {
+        email: emailEl.value.trim(),
+        name: nameEl.value.trim(),
+        phone: phoneEl.value.trim(),
+        line1: line1El.value.trim(),
+        line2: line2El.value.trim(),
+        postal: postalEl.value.trim(),
+        city: cityEl.value.trim()
       }
-
-      elements = stripe.elements({
-        clientSecret: data.clientSecret,
-        locale: 'de'
-      })
-
-      const paymentElement = elements.create('payment')
-      paymentElement.mount('#payment-element')
     }
 
-    document.getElementById('submit').addEventListener('click', async () => {
-      const btn = document.getElementById('submit')
-      const msg = document.getElementById('msg')
+    function validateForm(data) {
+      if (!data.email || !data.name || !data.phone || !data.line1 || !data.postal || !data.city) {
+        return 'Bitte füllen Sie alle Pflichtfelder aus.'
+      }
+      return ''
+    }
 
+    prepareBtn.addEventListener('click', async () => {
       msg.textContent = ''
 
-      const email = document.getElementById('email').value.trim()
-      const name = document.getElementById('name').value.trim()
-      const phone = document.getElementById('phone').value.trim()
-      const line1 = document.getElementById('line1').value.trim()
-      const line2 = document.getElementById('line2').value.trim()
-      const postal = document.getElementById('postal').value.trim()
-      const city = document.getElementById('city').value.trim()
+      const form = getFormData()
+      const errorText = validateForm(form)
 
-      if (!email || !name || !phone || !line1 || !postal || !city) {
-        msg.textContent = 'Bitte füllen Sie alle Pflichtfelder aus.'
+      if (errorText) {
+        msg.textContent = errorText
         return
       }
 
-      btn.disabled = true
-      btn.textContent = 'Wird verarbeitet...'
+      prepareBtn.disabled = true
+      prepareBtn.textContent = 'Wird vorbereitet...'
+
+      try {
+        const res = await fetch('/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Fehler beim Starten der Zahlung.')
+        }
+
+        elements = stripe.elements({
+          clientSecret: data.clientSecret,
+          locale: 'de'
+        })
+
+        const paymentElement = elements.create('payment')
+        paymentElement.mount('#payment-element')
+
+        paymentBox.classList.remove('hidden')
+        payBtn.classList.remove('hidden')
+        prepareBtn.classList.add('hidden')
+
+        emailEl.disabled = true
+        nameEl.disabled = true
+        phoneEl.disabled = true
+        line1El.disabled = true
+        line2El.disabled = true
+        postalEl.disabled = true
+        cityEl.disabled = true
+      } catch (error) {
+        msg.textContent = error.message || 'Unbekannter Fehler.'
+        prepareBtn.disabled = false
+        prepareBtn.textContent = 'Weiter zur Zahlung'
+      }
+    })
+
+    payBtn.addEventListener('click', async () => {
+      msg.textContent = ''
+
+      if (!elements) {
+        msg.textContent = 'Zahlungselement nicht geladen.'
+        return
+      }
+
+      payBtn.disabled = true
+      payBtn.textContent = 'Wird verarbeitet...'
+
+      const form = getFormData()
 
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          receipt_email: email,
+          receipt_email: form.email,
           shipping: {
-            name,
-            phone,
+            name: form.name,
+            phone: form.phone,
             address: {
-              line1,
-              line2,
-              postal_code: postal,
-              city,
+              line1: form.line1,
+              line2: form.line2 || '',
+              postal_code: form.postal,
+              city: form.city,
               country: 'DE'
             }
           },
@@ -101,12 +160,10 @@
 
       if (error) {
         msg.textContent = error.message || 'Zahlung fehlgeschlagen.'
-        btn.disabled = false
-        btn.textContent = 'Jetzt bezahlen €97,90'
+        payBtn.disabled = false
+        payBtn.textContent = 'Jetzt bezahlen €97,90'
       }
     })
-
-    init()
   </script>
 </body>
 </html>
