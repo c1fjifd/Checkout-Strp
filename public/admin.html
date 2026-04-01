@@ -2,37 +2,42 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Admin</title>
+  <title>Painel Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-gray-100 p-6">
+  <div class="max-w-7xl mx-auto">
 
-<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">Pedidos</h1>
+      <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-xl">
+        Sair
+      </button>
+    </div>
 
-  <div class="flex justify-between mb-6">
-    <h1 class="text-3xl font-bold">Vendas</h1>
-    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-xl">
-      Sair
-    </button>
+    <div class="bg-white rounded-xl p-4 shadow overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b">
+            <th class="p-3">Status</th>
+            <th class="p-3">Nome</th>
+            <th class="p-3">Email</th>
+            <th class="p-3">Telefone</th>
+            <th class="p-3">Valor</th>
+            <th class="p-3">País</th>
+            <th class="p-3">Cidade</th>
+            <th class="p-3">CEP</th>
+            <th class="p-3">Endereço</th>
+            <th class="p-3">Data</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
   </div>
 
-  <div class="bg-white rounded-xl p-4 shadow overflow-x-auto">
-    <table class="w-full text-left">
-      <thead>
-        <tr class="border-b">
-          <th class="p-3">Email</th>
-          <th class="p-3">Valor</th>
-          <th class="p-3">Status</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-
-</div>
-
-<script type="module" src="admin.js"></script>
-
+  <script type="module" src="admin.js"></script>
 </body>
 </html>
